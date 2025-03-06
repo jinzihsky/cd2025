@@ -2,69 +2,68 @@
 #include <stdlib.h>
 #include <string.h>
 
-typedef struct Node {
-    char c;
-    struct Node* n;
-} Node;
+struct Node {
+    char value;
+    int count;
+    struct Node *next;
+};
 
-Node* buildList(const char* s) {
-    Node *h = NULL, *t = NULL;
-    for (size_t i = 0; i < strlen(s); i++) {
-        Node* p = (Node*)malloc(sizeof(Node));
-        if (!p) {
-            printf("Memory error\n");
-            exit(1);
+
+void insertOrUpdate(struct Node **head, char ch) {
+    struct Node *current = *head;
+    struct Node *prev = NULL;
+
+
+    while (current != NULL) {
+        if (current->value == ch) {
+            current->count++; 
+            return;
         }
-        p->c = s[i];
-        p->n = NULL;
-        if (!h) h = t = p;
-        else t = t->n = p;
+        prev = current;
+        current = current->next;
     }
-    return h;
+
+    struct Node *newNode = (struct Node*)malloc(sizeof(struct Node));
+    newNode->value = ch;
+    newNode->count = 1;
+    newNode->next = NULL;
+
+    if (prev == NULL) {
+        *head = newNode;
+    } else {
+        prev->next = newNode;
+    }
 }
 
-void printList(Node* h) {
-    while (h) {
-        putchar(h->c);
-        h = h->n;
+void printList(struct Node *head) {
+    struct Node *current = head;
+    while (current != NULL) {
+        printf("%c : %d\n", current->value, current->count);
+        current = current->next;
     }
 }
 
-void freeList(Node* h) {
-    Node* t;
-    while (h) {
-        t = h;
-        h = h->n;
-        free(t);
+void freeList(struct Node *head) {
+    struct Node *current = head;
+    while (current != NULL) {
+        struct Node *temp = current;
+        current = current->next;
+        free(temp);
     }
 }
 
 int main() {
-    FILE* f = fopen(__FILE__, "r");
-    if (!f) {
-        printf("File error\n");
-        return 1;
+    FILE *file = fopen(__FILE__, "r");
+    if (file == NULL) return 1;
+
+    struct Node *head = NULL;
+    char ch;
+    while ((ch = fgetc(file)) != EOF) {
+        insertOrUpdate(&head, ch);
     }
-
-    fseek(f, 0, SEEK_END);
-    long sz = ftell(f);
-    rewind(f);
-
-    char* buf = (char*)malloc(sz + 1);
-    if (!buf) {
-        printf("Memory error\n");
-        fclose(f);
-        return 1;
-    }
-    fread(buf, 1, sz, f);
-    buf[sz] = '\0';
-    fclose(f);
-
-    Node* h = buildList(buf);
-    free(buf);
-
-    printList(h);
-    freeList(h);
+    fclose(file);
+    printList(head);
+    freeList(head);
 
     return 0;
 }
